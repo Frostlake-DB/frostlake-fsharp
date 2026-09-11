@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Frostlake.FSharp</RootNamespace>
+    <AssemblyName>Frostlake.FSharp</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <PackageId>Frostlake.FSharp</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>MLorek</Authors>
+    <Description>F# driver for Frostlake over its HTTP protocol: a pipeline query API, typed rows, and an ADO.NET provider that Dapper and other ADO.NET libraries run on.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Frostlake-DB/frostlake-fsharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Frostlake-DB/frostlake-fsharp.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>frostlake;fsharp;ado.net;dbprovider;sql;snowflake;database;driver</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Errors.fs" />
+    <Compile Include="SqlValue.fs" />
+    <Compile Include="SqlText.fs" />
+    <Compile Include="Binding.fs" />
+    <Compile Include="Dsn.fs" />
+    <Compile Include="Results.fs" />
+    <Compile Include="Wire.fs" />
+    <Compile Include="Transport.fs" />
+    <Compile Include="Connection.fs" />
+    <Compile Include="Sql.fs" />
+    <Compile Include="Ado.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- The lowest FSharp.Core the library needs (task { } arrived in 6.0), so it never forces an
+       application onto a newer one. -->
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="6.0.7" />
+  </ItemGroup>
+
+</Project>

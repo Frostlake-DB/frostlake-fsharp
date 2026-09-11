@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="TestSupport.fs" />
+    <Compile Include="ScriptedTransport.fs" />
+    <Compile Include="SqlTextTests.fs" />
+    <Compile Include="BindingTests.fs" />
+    <Compile Include="DsnTests.fs" />
+    <Compile Include="WireTests.fs" />
+    <Compile Include="RowTests.fs" />
+    <Compile Include="SessionTests.fs" />
+    <Compile Include="TransportTests.fs" />
+    <Compile Include="AdoTests.fs" />
+    <Compile Include="EngineTests.fs" />
+    <Compile Include="SqlModuleTests.fs" />
+    <Compile Include="AdoEngineTests.fs" />
+    <Compile Include="Suites.fs" Condition="Exists('Suites.fs')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.6" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6" />
+    <PackageReference Include="Dapper" Version="2.1.28" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Frostlake.FSharp/Frostlake.FSharp.fsproj" />
+  </ItemGroup>
+
+</Project>
