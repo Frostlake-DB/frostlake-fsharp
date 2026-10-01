@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.2.0
+
+- A text or binary column reports the length it was declared with: `Column.Length`, in characters
+  for text and in bytes for binary, and `ColumnSize` in the ADO.NET reader's schema table. Every
+  other type reports none.
+- Requires a Frostlake engine 0.2.0 or newer.
+
+## 0.1.0
 
 First release.
 
@@ -13,4 +20,3 @@ First release.
   session's `MULTI_STATEMENT_COUNT`.
 - Sessions are resumed with `requireSession`, replaced when one is lost with nothing depending on
   it, and released when the connection closes.
-- Requires a Frostlake engine 0.2.0 or newer.
