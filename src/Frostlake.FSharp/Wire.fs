@@ -164,6 +164,10 @@ module internal Wire =
           DataType = stringProperty element "dataType"
           Precision = intProperty element "precision"
           Scale = intProperty element "scale"
+          Length =
+            match element.TryGetProperty("length") with
+            | true, value when value.ValueKind = JsonValueKind.Number -> Some(value.GetInt32())
+            | _ -> None
           Nullable =
             match element.TryGetProperty("nullable") with
             | true, value when value.ValueKind = JsonValueKind.True -> Some true

@@ -858,9 +858,10 @@ and [<Sealed; AllowNullLiteral>] FrostlakeDataReader internal (result: QueryResu
                 let row = schema.NewRow()
                 row.[SchemaTableColumn.ColumnName] <- box c.Name
                 row.[SchemaTableColumn.ColumnOrdinal] <- box i
-                // The wire carries no length for text or binary, and a NUMBER's precision is not a
-                // size: a wide NUMBER read as text would otherwise become a MaxLength it breaks.
-                row.[SchemaTableColumn.ColumnSize] <- box -1
+                // A text or binary column reports its own length, which is what the account reports
+                // as that column's size. A NUMBER's precision is NOT a size — a wide NUMBER read as
+                // text would become a MaxLength it breaks — so anything else stays -1.
+                row.[SchemaTableColumn.ColumnSize] <- box (defaultArg c.Length -1)
                 row.[SchemaTableColumn.NumericPrecision] <- box (int16 c.Precision)
                 row.[SchemaTableColumn.NumericScale] <- box (int16 c.Scale)
                 row.[SchemaTableColumn.DataType] <- box (columnType i)

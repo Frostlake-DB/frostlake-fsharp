@@ -96,9 +96,11 @@ let engineDsn () : string = server.Value
 let engineHttp () : string =
     (Dsn.parse (engineDsn ())).BaseUri.ToString().TrimEnd('/')
 
-/// A [<Fact>] that reports as skipped — never as passed — when no engine is configured.
+/// A [<Fact>] that reports as skipped — never as passed — when no engine is configured. It is a
+/// SkippableFact so a test that finds, once it is running, that the engine cannot answer a check
+/// can skip that check the same way rather than pass it.
 type EngineFactAttribute() as this =
-    inherit FactAttribute()
+    inherit SkippableFactAttribute()
 
     do
         if not engineConfigured then
@@ -132,6 +134,16 @@ let activeSessions () : int =
     let _, body = rawRequest "GET" "/api/sessions" null
     use document = System.Text.Json.JsonDocument.Parse body
     document.RootElement.GetProperty("activeSessions").GetInt32()
+
+/// Whether the engine refuses a request whose statement count nobody declared. Engines before
+/// 0.1.0 run any pack they are sent, so there is no refusal to observe on one of those.
+let engineCountsStatements () : bool =
+    use connection = Connection.Open(engineDsn ())
+    try
+        connection.Execute "SELECT 1 AS A; SELECT 2 AS B" |> ignore
+        false
+    with :? FrostlakeException ->
+        true
 
 /// Assert that `action` raises a FrostlakeException of the given kind, and return it.
 let raisesKind (kind: ErrorKind) (action: unit -> 'T) : FrostlakeException =

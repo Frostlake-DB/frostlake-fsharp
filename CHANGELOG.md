@@ -13,4 +13,4 @@ First release.
   session's `MULTI_STATEMENT_COUNT`.
 - Sessions are resumed with `requireSession`, replaced when one is lost with nothing depending on
   it, and released when the connection closes.
-- Requires a Frostlake engine 0.0.7 or newer.
+- Requires a Frostlake engine 0.2.0 or newer.

@@ -140,10 +140,17 @@ let ``the value helpers bind what they say`` () =
 [<EngineFact>]
 let ``a pipeline query may declare how many statements it packs`` () =
     let _, dsn = freshDatabase "SQLMULTI"
+    dsn
+    |> Sql.connect
+    |> Sql.query "CREATE OR REPLACE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2), (3)"
+    |> Sql.multiStatementCount 2
+    |> Sql.executeResult
+    |> ignore
+    // One answer per statement that has one: engines before 0.1.0 answer DDL with nothing at all.
     let packed =
         dsn
         |> Sql.connect
-        |> Sql.query "CREATE OR REPLACE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2), (3)"
+        |> Sql.query "SELECT 1 AS A; SELECT 2 AS B"
         |> Sql.multiStatementCount 2
         |> Sql.executeResult
     Assert.Equal(2, packed.ResultSets.Length)

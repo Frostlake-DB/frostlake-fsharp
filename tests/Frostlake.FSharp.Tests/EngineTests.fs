@@ -271,21 +271,34 @@ let ``the server version and a ping answer`` () =
 let ``a pack declaring its own count runs without touching the session`` () =
     let _, dsn = freshDatabase "MULTI"
     use connection = Connection.Open dsn
-    // The session still runs one statement per request, so the pack is refused on its count alone.
+    // A pack saying how many statements it holds runs, and no ALTER SESSION was needed.
+    connection.Execute("CREATE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2)", multiStatementCount = 2)
+    |> ignore
+    Assert.Equal(2L, (connection.Execute "SELECT COUNT(*) AS N FROM T").Rows.[0].int64 "N")
+    // One answer per statement that has one. Engines before 0.1.0 answer DDL with nothing at all,
+    // so the count of answers is only a count of statements when every statement has one.
+    let two = connection.Execute("SELECT 1 AS A; SELECT 2 AS B", multiStatementCount = 2)
+    Assert.Equal(2, two.ResultSets.Length)
+    // Zero accepts any number.
+    let three = connection.Execute("SELECT 1 AS A; SELECT 2 AS B; SELECT 3 AS C", multiStatementCount = 0)
+    Assert.Equal(3, three.ResultSets.Length)
+
+/// Only an engine that counts a request's statements refuses one, and this driver supports older
+/// engines that run any pack they are sent. Against one of those there is no refusal to observe,
+/// so this reports as skipped rather than passed.
+[<EngineFact>]
+let ``a pack nobody asked for is still refused`` () =
+    Skip.IfNot(engineCountsStatements (), "the engine does not enforce a statement count")
+    let _, dsn = freshDatabase "MULTIGATE"
+    use connection = Connection.Open dsn
+    // The session runs one statement per request, so the pack is refused on its count alone.
     let refused =
         raisesKind ErrorKind.Refused (fun () ->
             connection.Execute "CREATE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2)")
     Assert.Contains("statement count", refused.Message)
-    // The same pack, saying how many statements it holds, runs — and no ALTER SESSION was needed.
-    let result =
-        connection.Execute(
-            "CREATE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2)",
-            multiStatementCount = 2
-        )
-    Assert.Equal(2, result.ResultSets.Length)
+    // The same pack, declaring what it holds, runs.
+    connection.Execute("CREATE TABLE T (ID INTEGER); INSERT INTO T VALUES (1), (2)", multiStatementCount = 2)
+    |> ignore
     Assert.Equal(2L, (connection.Execute "SELECT COUNT(*) AS N FROM T").Rows.[0].int64 "N")
     // The count was the request's alone: the session is where it was, still one statement a request.
     raisesKind ErrorKind.Refused (fun () -> connection.Execute "SELECT 1; SELECT 2") |> ignore
-    // Zero accepts any number.
-    let three = connection.Execute("SELECT 1 AS A; SELECT 2 AS B; SELECT 3 AS C", multiStatementCount = 0)
-    Assert.Equal(3, three.ResultSets.Length)

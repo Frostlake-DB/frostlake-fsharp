@@ -17,6 +17,10 @@ type Column =
         Precision: int
         /// Scale of a NUMBER column; 0 for every other type.
         Scale: int
+        /// A text column's length in characters, or a binary column's in bytes. None for every other
+        /// type, and from a server that predates the field. The account reports this same number as
+        /// the column's size.
+        Length: int option
         /// Some true when the column is known to accept NULL, Some false when it is known not to,
         /// None from a server that predates the field.
         Nullable: bool option

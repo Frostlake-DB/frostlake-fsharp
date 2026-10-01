@@ -128,6 +128,25 @@ let ``an answer from 0.1.0 carries newSession, update counts and nullability`` (
     Assert.Equal(Some false, decoded.ResultSets.[0].Columns.[0].Nullable)
 
 [<Fact>]
+let ``a text or binary column carries its own length, and no other type does`` () =
+    let decoded =
+        decode
+            """{"success":true,"sessionId":"s","resultSets":[{"columns":[{"dataType":"VARCHAR","name":"S","precision":0,"scale":0,"length":9},{"dataType":"BINARY","name":"B","precision":0,"scale":0,"length":5},{"dataType":"VARCHAR","name":"BIG","precision":0,"scale":0,"length":16777216},{"dataType":"NUMBER","name":"N","precision":10,"scale":2}],"rows":[["a","CAFE","b",1]]}]}"""
+    let columns = decoded.ResultSets.[0].Columns
+    Assert.Equal(Some 9, columns.[0].Length)
+    Assert.Equal(Some 5, columns.[1].Length)
+    Assert.Equal(Some 16777216, columns.[2].Length)
+    // A NUMBER carries no length: its precision is not a size.
+    Assert.True(columns.[3].Length.IsNone)
+
+[<Fact>]
+let ``a server that predates the length field leaves it unknown`` () =
+    let decoded =
+        decode
+            """{"success":true,"sessionId":"s","resultSets":[{"columns":[{"dataType":"VARCHAR","name":"S","precision":0,"scale":0}],"rows":[["a"]]}]}"""
+    Assert.True(decoded.ResultSets.[0].Columns.[0].Length.IsNone)
+
+[<Fact>]
 let ``an answer from 0.0.7 has its update count derived from the grid`` () =
     let update =
         decode

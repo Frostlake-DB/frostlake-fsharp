@@ -13,7 +13,7 @@ running `DatabaseHttpServer`. It offers two surfaces over one session machinery:
 
 ## Engine version
 
-Requires a Frostlake engine **0.0.7 or newer**. Ask a running server which one it is with
+Requires a Frostlake engine **0.2.0 or newer**. Ask a running server which one it is with
 `SELECT CURRENT_VERSION()`. The driver speaks the HTTP protocol, not the jar, so this is a floor
 rather than a lockstep pin. Engines from 0.1.0 add three things the driver uses when they are there:
 releasing a session on close, exact detection of a lost session, and full TIME and zoned-timestamp
@@ -372,6 +372,15 @@ boots one on a free port; `FROSTLAKE_URL` uses one that is already running:
 ```sh
 FROSTLAKE_CLASSPATH="/path/to/frostlake-db-<version>.jar:<its dependencies>" dotnet test
 FROSTLAKE_URL=frostlake://localhost:18082 dotnet test
+```
+
+`FL_CORPUS` adds the engine's testkit corpus — the language-neutral JSON suites a frostlake checkout
+keeps in `engine/src/test/resources/testkit` — replayed through the driver on that same engine; its
+report, one TSV row per case, goes to `FROSTLAKE_TESTKIT_REPORT` (by default a file in the temp
+directory). Without `FL_CORPUS` that test reports as skipped. Give it as an absolute path:
+
+```sh
+FL_CORPUS=/path/to/frostlake/engine/src/test/resources/testkit FROSTLAKE_URL=frostlake://localhost:18082 dotnet test
 ```
 
 ## License
