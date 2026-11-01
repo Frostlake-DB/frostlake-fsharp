@@ -48,20 +48,33 @@ module internal SqlText =
                 j <- j + 1
         if past < 0 then sql.Length else past
 
-    /// Whether the `$` at `i` opens a $$…$$ body rather than sitting inside an identifier.
+    /// A character that opens an unquoted name, as the lexer's IDENTIFIER reads one: [a-zA-Z_].
+    let isNameStart (c: char) = Char.IsAsciiLetter c || c = '_'
+
+    /// Index just past the unquoted name starting at `start`, read whole as the lexer reads an
+    /// IDENTIFIER, [a-zA-Z_][a-zA-Z0-9_$]*: the `$$` inside `a$$b` opens no body.
+    let skipName (sql: string) (start: int) : int =
+        let mutable j = start + 1
+        while j < sql.Length && (Char.IsAsciiLetterOrDigit sql.[j] || sql.[j] = '_' || sql.[j] = '$') do
+            j <- j + 1
+        j
+
+    /// Whether the `$` at `i` opens a $$…$$ body. One inside a name never gets here, since the name
+    /// is read whole; one after a number, as in `1$$…$$`, opens a body, as the lexer reads it.
     let opensDollarQuote (sql: string) (i: int) =
-        i + 1 < sql.Length
-        && sql.[i] = '$'
-        && sql.[i + 1] = '$'
-        && (i = 0 || not (isWordChar sql.[i - 1]))
+        i + 1 < sql.Length && sql.[i] = '$' && sql.[i + 1] = '$'
 
     let skipDollarQuoted (sql: string) (start: int) =
         let j = sql.IndexOf("$$", start + 2, StringComparison.Ordinal)
         if j < 0 then sql.Length else j + 2
 
+    let private lineEnds = [| '\r'; '\n' |]
+
+    /// A line comment ends at a line feed or a carriage return, whichever comes first, as the
+    /// lexer's ('--' | '//') ~[\r\n]* does. The line end itself is left unread.
     let skipLine (sql: string) (start: int) =
-        let j = sql.IndexOf('\n', start)
-        if j < 0 then sql.Length else j + 1
+        let j = sql.IndexOfAny(lineEnds, start)
+        if j < 0 then sql.Length else j
 
     /// An unterminated comment swallows the rest of the input, as it does on the server.
     let skipBlockComment (sql: string) (start: int) =
@@ -74,6 +87,8 @@ module internal SqlText =
     let skipNonCode (sql: string) (i: int) : int =
         let next = if i + 1 < sql.Length then sql.[i + 1] else '\000'
         match sql.[i] with
+        // A name holds no separator or marker, and the $$ inside one opens no body.
+        | c when isNameStart c -> skipName sql i
         | '\'' -> skipString sql i
         | '"' -> skipQuoted sql i '"'
         | '$' when opensDollarQuote sql i -> skipDollarQuoted sql i

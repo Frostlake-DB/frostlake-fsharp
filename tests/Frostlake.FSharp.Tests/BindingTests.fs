@@ -47,6 +47,28 @@ let ``negative numbers are parenthesised so they cannot open a comment`` () =
     Assert.Equal("SELECT 3-(-7.25)", bind "SELECT 3-?" [ SqlValue.DecimalText "-7.25" ])
 
 [<Fact>]
+let ``a negative number stays one value before a cast`` () =
+    // Bare, ?::VARCHAR would cast before it negates.
+    Assert.Equal("SELECT (-5)::VARCHAR", bind "SELECT ?::VARCHAR" [ SqlValue.Int(-5L) ])
+    Assert.Equal("SELECT (-2.5)::VARCHAR", bind "SELECT ?::VARCHAR" [ SqlValue.Decimal(-2.5M) ])
+    Assert.Equal("SELECT (-2.5::FLOAT)::VARCHAR", bind "SELECT ?::VARCHAR" [ SqlValue.Float(-2.5) ])
+    Assert.Equal(
+        "SELECT (-12345678901234567890)::VARCHAR",
+        bind "SELECT ?::VARCHAR" [ SqlValue.BigInt(BigInteger.Parse "-12345678901234567890") ]
+    )
+    Assert.Equal("(-9223372036854775808)", literal (SqlValue.Int Int64.MinValue))
+    Assert.Equal("(-2.5::FLOAT)", literal (SqlValue.ofObj (box (-2.5f))))
+    // Decided by the text: -0.0 is not below zero, yet it is written with a minus.
+    Assert.Equal("(-0::FLOAT)", literal (SqlValue.Float Double.NegativeZero))
+
+[<Fact>]
+let ``a placeholder after a name holding dollars or a comment a carriage return ends is bound`` () =
+    Assert.Equal("SELECT 1 AS a$$b, 7", bind "SELECT 1 AS a$$b, ?" [ SqlValue.Int 7L ])
+    Assert.Equal("SELECT 1$$x?$$, 7", bind "SELECT 1$$x?$$, ?" [ SqlValue.Int 7L ])
+    Assert.Equal("SELECT 1 -- c\r, 7", bind "SELECT 1 -- c\r, ?" [ SqlValue.Int 7L ])
+    Assert.Equal("SELECT 1 -- c\r, 7", bindNamed "SELECT 1 -- c\r, :n" [ "n", SqlValue.Int 7L ])
+
+[<Fact>]
 let ``named arguments bind ignoring case and prefix`` () =
     Assert.Equal(
         "SELECT 1, 1, 'x'",

@@ -23,6 +23,23 @@ let ``a dollar pair inside an identifier does not open a body`` () =
     Assert.Equal<string list>([ "?" ], names "SELECT A$$B, ? FROM t")
 
 [<Fact>]
+let ``a name is read whole, as the lexer reads one`` () =
+    Assert.Equal<string list>([ "?" ], names "SELECT 1 AS a$$b, ?")
+    Assert.Equal<string list>([ "?"; "?" ], names "SELECT a$$b, ? FROM t$$ WHERE c$ = ?")
+    Assert.Equal<string list>([ "?" ], names "SELECT $$a?b$$, x$$, ?")
+    // After a number, $$ opens a body: the marker is the one past it.
+    Assert.Equal<int list>([ 16 ], SqlText.markers "SELECT 1$$x?$$, ?" |> List.map (fun m -> m.Start))
+
+[<Fact>]
+let ``a line comment ends at a carriage return`` () =
+    Assert.Equal<string list>([ "?" ], names "SELECT 1 -- c\r, ?")
+    Assert.Equal<string list>([ "?" ], names "SELECT 1 // c?\r\n, ?")
+    Assert.Equal<string list>([ "a" ], names "SELECT 1 -- c\r, :a")
+    Assert.Equal(2, (SqlText.statements "SELECT 1 -- a\r; SELECT 2").Length)
+    Assert.Equal<string list>([ "USE"; "DATABASE" ], SqlText.leadingWords "-- c\rUSE DATABASE d" 2)
+    Assert.True(SqlText.touchesSession "// c\rUSE DATABASE d")
+
+[<Fact>]
 let ``casts, assignments and server-side positional references are not markers`` () =
     Assert.Empty(names "SELECT v::date, x := 1, :1, :2")
 
